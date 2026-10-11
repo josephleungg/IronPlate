@@ -43,3 +43,8 @@ export function shortDuration(totalSeconds: number) {
   const h = Math.floor(m / 60);
   return h ? `${h}h ${m % 60}m` : `${m}m`;
 }
+
+export const ML_PER_FLOZ = 29.5735;
+/** US fluid ounces <-> millilitres, for water tracking in imperial. */
+export const mlToFloz = (ml: number) => ml / ML_PER_FLOZ;
+export const flozToMl = (oz: number) => oz * ML_PER_FLOZ;

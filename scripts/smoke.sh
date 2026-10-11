@@ -26,6 +26,12 @@ R=$(req $A POST /api/v1/me/onboarding '{"sex":"male","birthDate":"1995-05-05","h
 CAL=$(echo "$R" | body | jq_ 'j.recommendation.calories'); [ "$CAL" -gt 1500 ] && [ "$CAL" -lt 3500 ] && ok "calories sane ($CAL)" || bad "calories" "$CAL"
 R=$(req $B POST /api/v1/me/onboarding '{"sex":"female","birthDate":"1998-01-01","heightCm":165,"weightKg":60,"activityLevel":"light","goal":"maintain","timezone":"UTC"}'); expect "onboard bo" 200 "$R"
 R=$(req $A POST /api/v1/me/onboarding '{"sex":"male"}'); expect "validation error is 400" 400 "$R"
+R=$(req $A GET /api/v1/me/settings); [ "$(echo "$R" | body | jq_ 'j.liftUnit')" = "null" ] && ok "lifting unit starts unset (follows main units)" || bad "default liftUnit" "$(echo "$R" | body | head -c 200)"
+R=$(req $A PATCH /api/v1/me/settings '{"liftUnit":"lb"}'); expect "set lifting unit to lb" 200 "$R"
+[ "$(echo "$R" | body | jq_ 'j.liftUnit')" = "lb" ] && [ "$(echo "$R" | body | jq_ 'j.weightUnit')" = "kg" ] && ok "lifts in lb while body weight stays kg" || bad "independent units" "$(echo "$R" | body | head -c 250)"
+R=$(req $A PATCH /api/v1/me/settings '{"liftUnit":"stone"}'); expect "invalid lifting unit is 400" 400 "$R"
+R=$(req $A PATCH /api/v1/me/settings '{"liftUnit":null}'); expect "clear lifting unit" 200 "$R"
+[ "$(echo "$R" | body | jq_ 'j.liftUnit')" = "null" ] && ok "lifting unit back to following main units" || bad "clear liftUnit" "$(echo "$R" | body | head -c 200)"
 
 echo "# foods & diary"
 R=$(req $A GET "/api/v1/foods/search?q=chicken+breast"); expect "search foods" 200 "$R"

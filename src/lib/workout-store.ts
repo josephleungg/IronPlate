@@ -1,5 +1,6 @@
 "use client";
 import { useSyncExternalStore } from "react";
+import { kgToLb, kmToMi, lbToKg, miToKm } from "./domain/units";
 import { uuidv7 } from "./id";
 import type { ExerciseType, SetType } from "./types";
 
@@ -66,3 +67,26 @@ export function startDraft(init: Partial<Pick<Draft, "title" | "routineId" | "ex
 export const newExercise = (e: { id: string; name: string; type: ExerciseType }, sets = 3): DraftExercise => ({
   key: uuidv7(), exerciseId: e.id, name: e.name, type: e.type, restSeconds: null, sets: Array.from({ length: sets }, () => newSet()),
 });
+
+/**
+ * A workout in progress stores numbers as typed, in the user's units. When a unit changes
+ * mid-session, convert them so "80" kg never silently becomes "80" lb. Pass only the units that changed.
+ */
+export function convertDraft(to: { weight?: "kg" | "lb"; distance?: "km" | "mi" }) {
+  if (!read()) return;
+  const r1 = (n: number) => String(Math.round(n * 10) / 10);
+  // Three decimals for distance so flipping back and forth does not drift.
+  const r3 = (n: number) => String(Math.round(n * 1000) / 1000);
+  const num = (v: string) => v !== "" && Number.isFinite(Number(v));
+  updateDraft((d) => ({
+    ...d,
+    exercises: d.exercises.map((e) => ({
+      ...e,
+      sets: e.sets.map((s) => ({
+        ...s,
+        weight: to.weight && num(s.weight) ? r1(to.weight === "lb" ? kgToLb(Number(s.weight)) : lbToKg(Number(s.weight))) : s.weight,
+        distance: to.distance && num(s.distance) ? r3(to.distance === "mi" ? kmToMi(Number(s.distance)) : miToKm(Number(s.distance))) : s.distance,
+      })),
+    })),
+  }));
+}

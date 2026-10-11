@@ -20,7 +20,8 @@ export function Card({ tone = "default", className, ...p }: HTMLAttributes<HTMLD
 export const Muted = ({ className, ...p }: HTMLAttributes<HTMLSpanElement>) => <span className={cx("text-sm text-current opacity-70", className)} {...p} />;
 
 type BtnProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "lime" | "secondary" | "ghost" | "danger"; size?: "md" | "sm"; loading?: boolean };
-export function Button({ variant = "primary", size = "md", loading, className, children, disabled, ...p }: BtnProps) {
+/** Defaults to type="button" so a button inside a <form> never submits it by accident; pass type="submit" to submit. */
+export function Button({ variant = "primary", size = "md", loading, className, children, disabled, type = "button", ...p }: BtnProps) {
   const v = {
     primary: "bg-primary text-primary-fg",
     lime: "bg-lime text-[#14213d]",
@@ -30,6 +31,7 @@ export function Button({ variant = "primary", size = "md", loading, className, c
   }[variant];
   return (
     <button
+      type={type}
       className={cx(
         "inline-flex items-center justify-center gap-2 rounded-button font-medium transition-[transform,opacity] active:scale-[.98] disabled:opacity-50 disabled:active:scale-100",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
@@ -46,7 +48,7 @@ export function Button({ variant = "primary", size = "md", loading, className, c
 }
 
 export function IconButton({ label, className, ...p }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string }) {
-  return <button aria-label={label} title={label} className={cx("inline-flex size-11 items-center justify-center rounded-button text-foreground hover:bg-track focus-visible:outline-2 focus-visible:outline-foreground", className)} {...p} />;
+  return <button type="button" aria-label={label} title={label} className={cx("inline-flex size-11 items-center justify-center rounded-button text-foreground hover:bg-track focus-visible:outline-2 focus-visible:outline-foreground", className)} {...p} />;
 }
 
 export function Pill({ tone = "line", className, ...p }: HTMLAttributes<HTMLSpanElement> & { tone?: "line" | "lime" | "lavender" }) {
@@ -80,7 +82,7 @@ export function Segmented<T extends string>({ options, value, onChange, classNam
   return (
     <div role="tablist" className={cx("flex rounded-lg bg-track p-1", className)}>
       {options.map((o) => (
-        <button key={o.value} role="tab" aria-selected={o.value === value} onClick={() => onChange(o.value)}
+        <button key={o.value} type="button" role="tab" aria-selected={o.value === value} onClick={() => onChange(o.value)}
           className={cx("min-h-9 flex-1 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-foreground", o.value === value ? "bg-primary text-primary-fg" : "text-muted")}>
           {o.label}
         </button>

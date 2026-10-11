@@ -8,7 +8,7 @@ import { Button, Card, Empty, ErrorNote, IconButton, Ring, Skeleton } from "@/co
 import { api } from "@/lib/api";
 import { addDays } from "@/lib/domain/dates";
 import { n0 } from "@/lib/format";
-import { useMe, useToday } from "@/lib/hooks";
+import { useMe, useToday, useUnits } from "@/lib/hooks";
 import type { DayData, Entry } from "@/lib/types";
 import { AddFoodSheet } from "./add-food-sheet";
 import { EditEntrySheet } from "./edit-entry-sheet";
@@ -37,6 +37,7 @@ function MacroTile({ label, value, goal, color }: { label: string; value: number
 export function DiaryView() {
   const me = useMe();
   const today = useToday();
+  const u = useUnits();
   const toast = useToast();
   const qc = useQueryClient();
   const [picked, setPicked] = useState<string | null>(null);
@@ -112,7 +113,7 @@ export function DiaryView() {
               <ul>
                 {m.entries.map((e) => (
                   <li key={e.id} className="mt-2.5 border-t border-border pt-2.5">
-                    <button onClick={() => setEditing(e)} className="flex w-full items-start justify-between gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-foreground">
+                    <button type="button" onClick={() => setEditing(e)} className="flex w-full items-start justify-between gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-foreground">
                       <span className="min-w-0">
                         <span className="block truncate">{e.name}</span>
                         <span className="block text-sm text-muted">{e.source === "quick_add" ? "Quick add" : `${n0(e.servings * 100) === "100" ? "1" : Math.round(e.servings * 100) / 100} serving${e.servings === 1 ? "" : "s"}${e.brand ? ` · ${e.brand}` : ""}`}</span>
@@ -122,7 +123,7 @@ export function DiaryView() {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => setAddTo({ id: m.slot.id, name: m.slot.name })} className="mt-3 flex min-h-11 w-full items-center gap-2 border-t border-border pt-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-foreground">
+              <button type="button" onClick={() => setAddTo({ id: m.slot.id, name: m.slot.name })} className="mt-3 flex min-h-11 w-full items-center gap-2 border-t border-border pt-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-foreground">
                 <span className="flex size-6 items-center justify-center rounded-md bg-lime text-[#14213d]"><Plus size={16} strokeWidth={2.5} /></span>Add food
               </button>
             </Card>
@@ -131,12 +132,13 @@ export function DiaryView() {
           <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2"><Droplets size={20} className="text-muted" /><h2 className="text-[22px]">Water</h2></div>
-              <span className="display text-base font-medium text-muted">{n0(d.water.totalMl)} / {n0(d.water.goalMl)} ml</span>
+              <span className="display text-base font-medium text-muted">{n0(u.vol(d.water.totalMl))} / {n0(u.vol(d.water.goalMl))} {u.volUnit}</span>
             </div>
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-track"><div className="h-full rounded-full bg-[#14213d] transition-[width] duration-500 dark:bg-lime" style={{ width: `${Math.min(100, (d.water.totalMl / d.water.goalMl) * 100)}%` }} /></div>
             <div className="mt-3 flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => water.mutate(250)} disabled={water.isPending}>+250 ml</Button>
-              <Button variant="secondary" size="sm" onClick={() => water.mutate(500)} disabled={water.isPending}>+500 ml</Button>
+              {(u.imperial ? [8, 16] : [250, 500]).map((amount) => (
+                <Button key={amount} variant="secondary" size="sm" onClick={() => water.mutate(Math.round(u.volToMl(amount)))} disabled={water.isPending}>+{amount} {u.volUnit}</Button>
+              ))}
               {d.water.logs.length ? <Button variant="ghost" size="sm" onClick={() => undoWater.mutate(d.water.logs[d.water.logs.length - 1].id)} disabled={undoWater.isPending}><Undo2 size={16} />Undo</Button> : null}
             </div>
           </Card>

@@ -11,7 +11,7 @@ import { authClient } from "@/lib/auth-client";
 export default function SignUp() {
   const router = useRouter();
   const config = useQuery({ queryKey: ["config"], queryFn: () => api<{ inviteRequired: boolean }>("/config") });
-  const [f, setF] = useState({ name: "", username: "", email: "", password: "", inviteCode: "" });
+  const [f, setF] = useState({ name: "", username: "", email: "", password: "", confirm: "", inviteCode: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -21,6 +21,10 @@ export default function SignUp() {
     setBusy(true);
     setError(null);
     const username = f.username.trim().toLowerCase();
+    if (f.password !== f.confirm) {
+      setBusy(false);
+      return setError("The two passwords don't match. Check them and try again.");
+    }
     if (!/^[a-z0-9_.]{3,30}$/.test(username)) {
       setBusy(false);
       return setError("Usernames are 3 to 30 characters: letters, numbers, underscores, and dots.");
@@ -45,6 +49,7 @@ export default function SignUp() {
           <Field label="Username" hint="Friends find you by this."><Input value={f.username} onChange={set("username")} autoComplete="username" autoCapitalize="none" required /></Field>
           <Field label="Email"><Input type="email" value={f.email} onChange={set("email")} autoComplete="email" required /></Field>
           <Field label="Password" hint="At least 8 characters."><Input type="password" value={f.password} onChange={set("password")} autoComplete="new-password" minLength={8} required /></Field>
+          <Field label="Confirm password" hint={f.confirm && f.confirm !== f.password ? "Doesn't match yet." : undefined}><Input type="password" value={f.confirm} onChange={set("confirm")} autoComplete="new-password" aria-invalid={Boolean(f.confirm) && f.confirm !== f.password} required /></Field>
           {config.data?.inviteRequired ? <Field label="Invite code" hint="Ask whoever invited you."><Input value={f.inviteCode} onChange={set("inviteCode")} autoCapitalize="none" required /></Field> : null}
           <ErrorNote error={error ? new Error(error) : null} />
           <Button type="submit" loading={busy} className="w-full">Create account</Button>

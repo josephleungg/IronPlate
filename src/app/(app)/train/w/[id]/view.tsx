@@ -59,7 +59,7 @@ export function WorkoutDetailView({ id }: { id: string }) {
 
       <div className="grid grid-cols-2 gap-2.5">
         <Stat label="Time" value={clock(d.durationS)} />
-        <Stat label="Volume" value={fmtVolume(d.totalVolumeKg, u.w)} unit={u.w} />
+        <Stat label="Volume" value={fmtVolume(d.totalVolumeKg, u.lift)} unit={u.lift} />
         <Stat label="Sets" value={d.totalSets} />
         <Stat label="New PRs" value={d.prCount} tone={d.prCount ? "lime" : "default"} />
       </div>
@@ -69,13 +69,13 @@ export function WorkoutDetailView({ id }: { id: string }) {
         return (
           <Card key={e.id}>
             <h2 className="mb-2 text-xl">{e.name}</h2>
-            {e.records.length ? <div className="mb-3 flex flex-wrap gap-2">{e.records.map((r) => <Pill key={r.recordType} tone="lime"><Trophy size={14} />{RECORD_LABEL[r.recordType] ?? r.recordType}: {r.recordType.includes("weight") || r.recordType.includes("1rm") || r.recordType.includes("volume") ? `${n0(u.show(r.value))} ${u.w}` : n0(r.value)}</Pill>)}</div> : null}
+            {e.records.length ? <div className="mb-3 flex flex-wrap gap-2">{e.records.map((r) => <Pill key={r.recordType} tone="lime"><Trophy size={14} />{RECORD_LABEL[r.recordType] ?? r.recordType}: {r.recordType.includes("weight") || r.recordType.includes("1rm") || r.recordType.includes("volume") ? `${n0(u.liftShow(r.value))} ${u.lift}` : n0(r.value)}</Pill>)}</div> : null}
             <ol className="divide-y divide-border">
               {e.sets.map((s: WorkoutSet, i) => (
                 <li key={i} className="flex items-center justify-between py-2">
                   <span className="display w-8 text-muted">{s.setType === "warmup" ? "W" : s.setType === "failure" ? "F" : s.setType === "drop" ? "D" : e.sets.slice(0, i).filter((x) => x.setType !== "warmup").length + 1}</span>
                   <span className="display text-lg">
-                    {[f.weight && s.weightKg != null ? `${Math.round(u.show(s.weightKg) * 10) / 10} ${u.w}` : null, f.reps && s.reps != null ? `${s.reps} reps` : null, f.duration && s.durationS != null ? clock(s.durationS) : null, f.distance && s.distanceM != null ? `${Math.round(u.distShow(s.distanceM) * 100) / 100} ${u.d}` : null].filter(Boolean).join(" × ")}
+                    {[f.weight && s.weightKg != null ? `${Math.round(u.liftShow(s.weightKg) * 10) / 10} ${u.lift}` : null, f.reps && s.reps != null ? `${s.reps} reps` : null, f.duration && s.durationS != null ? clock(s.durationS) : null, f.distance && s.distanceM != null ? `${Math.round(u.distShow(s.distanceM) * 100) / 100} ${u.d}` : null].filter(Boolean).join(" × ")}
                   </span>
                 </li>
               ))}

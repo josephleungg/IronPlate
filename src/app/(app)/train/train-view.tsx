@@ -43,7 +43,7 @@ export function TrainView() {
 
   const startRoutine = useMutation({
     mutationFn: (id: string) => api<RoutineDetail>(`/routines/${id}`),
-    onSuccess: (r) => { startDraft({ title: r.name, routineId: r.id, exercises: routineToExercises(r, u.show) }); router.push("/train/workout"); },
+    onSuccess: (r) => { startDraft({ title: r.name, routineId: r.id, exercises: routineToExercises(r, u.liftShow) }); router.push("/train/workout"); },
   });
   const delRoutine = useMutation({
     mutationFn: (id: string) => api(`/routines/${id}`, { method: "DELETE" }),
@@ -86,7 +86,7 @@ export function TrainView() {
                 <Link key={w.id} href={`/train/w/${w.id}`} className="block rounded-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">
                   <Card className="space-y-2">
                     <div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="truncate font-display text-xl font-bold">{w.title}</div><div className="text-sm text-muted">{timeAgo(w.startedAt)}</div></div><ChevronRight className="mt-1 shrink-0 text-muted" /></div>
-                    <div className="flex flex-wrap gap-2"><Pill>{clock(w.durationS)}</Pill><Pill>{fmtVolume(w.totalVolumeKg, u.w)} {u.w}</Pill><Pill>{w.totalSets} sets</Pill>{w.prCount ? <Pill tone="lime"><Trophy size={14} />{w.prCount} PR{w.prCount === 1 ? "" : "s"}</Pill> : null}</div>
+                    <div className="flex flex-wrap gap-2"><Pill>{clock(w.durationS)}</Pill><Pill>{fmtVolume(w.totalVolumeKg, u.lift)} {u.lift}</Pill><Pill>{w.totalSets} sets</Pill>{w.prCount ? <Pill tone="lime"><Trophy size={14} />{w.prCount} PR{w.prCount === 1 ? "" : "s"}</Pill> : null}</div>
                     <div className="truncate text-sm text-muted">{w.exercises.map((e) => `${e.sets} × ${e.name}`).slice(0, 3).join(" · ")}</div>
                   </Card>
                 </Link>

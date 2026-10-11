@@ -66,7 +66,7 @@ function FoodRow({ food, onClick }: { food: Food; onClick: () => void }) {
   const n = s ? nutrientsForAmount(food, s.amount) : null;
   return (
     <li>
-      <button onClick={onClick} className="flex min-h-14 w-full items-center justify-between gap-3 border-b border-border py-2 text-left focus-visible:outline-2 focus-visible:outline-foreground">
+      <button type="button" onClick={onClick} className="flex min-h-14 w-full items-center justify-between gap-3 border-b border-border py-2 text-left focus-visible:outline-2 focus-visible:outline-foreground">
         <span className="min-w-0"><span className="block truncate">{food.name}</span><span className="block truncate text-sm text-muted">{[food.brand, s?.label].filter(Boolean).join(" · ")}</span></span>
         <span className="display shrink-0 text-base">{n ? n0(n.kcal) : n0(food.kcal100)}<span className="ml-0.5 text-xs font-medium text-muted">kcal</span></span>
       </button>

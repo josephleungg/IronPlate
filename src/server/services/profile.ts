@@ -15,6 +15,7 @@ export const settingsPatch = z.object({
   activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]).optional(),
   weightUnit: z.enum(["kg", "lb"]).optional(),
   distanceUnit: z.enum(["km", "mi"]).optional(),
+  liftUnit: z.enum(["kg", "lb"]).nullable().optional(),
   timezone: z.string().max(64).refine((tz) => { try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true; } catch { return false; } }, "Unknown timezone").optional(),
   weekStart: z.union([z.literal(0), z.literal(1)]).optional(),
   diaryVisibility: z.enum(["private", "followers", "public"]).optional(),

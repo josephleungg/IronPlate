@@ -45,7 +45,7 @@ function Body({ onPick }: { onPick: (e: Exercise) => void }) {
       </div>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="group" aria-label="Filter by muscle">
         {[{ slug: "", name: "All" }, ...(muscles.data?.data ?? [])].map((m) => (
-          <button key={m.slug} onClick={() => setMuscle(m.slug)} aria-pressed={muscle === m.slug}
+          <button type="button" key={m.slug} onClick={() => setMuscle(m.slug)} aria-pressed={muscle === m.slug}
             className={cx("min-h-9 shrink-0 rounded-full border px-3.5 text-sm font-medium", muscle === m.slug ? "border-transparent bg-primary text-primary-fg" : "border-border text-muted")}>{m.name}</button>
         ))}
       </div>
@@ -53,7 +53,7 @@ function Body({ onPick }: { onPick: (e: Exercise) => void }) {
         : list.data?.data.length ? (
           <ul>{list.data.data.map((e) => (
             <li key={e.id}>
-              <button onClick={() => onPick(e)} className="flex min-h-14 w-full flex-col items-start justify-center border-b border-border py-2 text-left focus-visible:outline-2 focus-visible:outline-foreground">
+              <button type="button" onClick={() => onPick(e)} className="flex min-h-14 w-full flex-col items-start justify-center border-b border-border py-2 text-left focus-visible:outline-2 focus-visible:outline-foreground">
                 <span className="font-medium">{e.name}</span>
                 <span className="text-sm capitalize text-muted">{[e.primaryMuscles.join(", ").replace(/_/g, " "), e.ownerId ? "Custom" : ""].filter(Boolean).join(" · ")}</span>
               </button>

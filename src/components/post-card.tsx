@@ -38,7 +38,7 @@ export function PostCard({ post, detail = false }: { post: Post; detail?: boolea
           <h2 className="text-[22px] leading-tight">{w.title}</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
             <div className="min-w-0"><div className="display text-[28px] leading-tight">{shortDuration(w.durationS)}</div><div className="text-sm text-muted">Time</div></div>
-            <div className="min-w-0"><div className="display text-[28px] leading-tight">{fmtVolume(w.totalVolumeKg, u.w)}</div><div className="text-sm text-muted">{u.w} volume</div></div>
+            <div className="min-w-0"><div className="display text-[28px] leading-tight">{fmtVolume(w.totalVolumeKg, u.lift)}</div><div className="text-sm text-muted">{u.lift} volume</div></div>
             <div className="min-w-0"><div className="display text-[28px] leading-tight">{w.prCount}</div><div className="text-sm text-muted">PR{w.prCount === 1 ? "" : "s"}</div></div>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-muted">{w.exercises.map((e) => `${e.sets} × ${e.name}`).join(" · ")}</p>
@@ -59,7 +59,7 @@ export function PostCard({ post, detail = false }: { post: Post; detail?: boolea
       </div>
       {w && !detail ? <Link href={`/train/w/${w.id}`} className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">{body}</Link> : <div>{body}</div>}
       <div className="flex items-center gap-5 pt-1">
-        <button onClick={toggle} aria-pressed={liked} aria-label={`${liked ? "Unlike" : "Like"}. ${likes} like${likes === 1 ? "" : "s"}`} className={cx("flex min-h-11 items-center gap-1.5 text-sm", liked ? "text-[#e5484d]" : "text-muted")}>
+        <button type="button" onClick={toggle} aria-pressed={liked} aria-label={`${liked ? "Unlike" : "Like"}. ${likes} like${likes === 1 ? "" : "s"}`} className={cx("flex min-h-11 items-center gap-1.5 text-sm", liked ? "text-[#e5484d]" : "text-muted")}>
           <Heart size={22} fill={liked ? "currentColor" : "none"} />{likes}
         </button>
         {detail ? <span className="flex items-center gap-1.5 text-sm text-muted"><MessageCircle size={22} />{post.commentCount}</span> : (

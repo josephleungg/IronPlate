@@ -8,7 +8,7 @@ export type SetType = "warmup" | "normal" | "failure" | "drop";
 export type Settings = {
   sex: "male" | "female" | "unspecified"; birthDate: string | null; heightCm: number | null;
   activityLevel: "sedentary" | "light" | "moderate" | "active" | "very_active";
-  weightUnit: "kg" | "lb"; distanceUnit: "km" | "mi"; timezone: string; weekStart: number;
+  weightUnit: "kg" | "lb"; distanceUnit: "km" | "mi"; liftUnit: "kg" | "lb" | null; timezone: string; weekStart: number;
   diaryVisibility: Visibility; defaultWorkoutVisibility: Visibility;
 };
 export type Goal = { id: string; calories: number; proteinG: number; carbsG: number; fatG: number; fiberG: number | null; waterMl: number | null; effectiveFrom: string };

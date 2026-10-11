@@ -4,13 +4,13 @@ import { Check, Minus, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useToast } from "@/components/providers";
-import { Button, Card, ErrorNote, Field, IconButton, Input, Select, Sheet, Stat, cx } from "@/components/ui";
+import { Button, Card, ErrorNote, Field, IconButton, Input, Segmented, Select, Sheet, Stat, cx } from "@/components/ui";
 import { api } from "@/lib/api";
 import { EXERCISE_FIELDS, workoutTotals, type ExerciseType } from "@/lib/domain/training";
 import { clock, fmtVolume, n0 } from "@/lib/format";
 import { useMe, useUnits } from "@/lib/hooks";
 import type { Exercise, SetType, WorkoutDetail, WorkoutSet } from "@/lib/types";
-import { clearDraft, nav, newExercise, newSet, updateDraft, useDraft, type Draft, type DraftExercise, type DraftSet } from "@/lib/workout-store";
+import { clearDraft, convertDraft, nav, newExercise, newSet, updateDraft, useDraft, type Draft, type DraftExercise, type DraftSet } from "@/lib/workout-store";
 import { ExercisePicker } from "../exercise-picker";
 
 const DEFAULT_REST = 90;
@@ -43,6 +43,17 @@ function LoggerBody({ draft }: { draft: Draft }) {
   const [picker, setPicker] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [menu, setMenu] = useState(false);
+  const qc = useQueryClient();
+
+  // Quick switch for the weight unit used in this and future workouts. It is saved as the user's
+  // lifting-weight setting, and anything already typed is converted so the numbers stay true.
+  const changeLift = useMutation({
+    mutationFn: (to: "kg" | "lb") => api("/me/settings", { method: "PATCH", body: { liftUnit: to } }),
+    onSuccess: async (_r, to) => {
+      convertDraft({ weight: to });
+      await qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
 
   const ids = draft.exercises.map((e) => e.exerciseId).join(",");
   const prev = useQuery({ queryKey: ["previous", ids], queryFn: () => api<{ data: Record<string, WorkoutSet[]> }>(`/exercises/previous?ids=${ids}`), enabled: ids.length > 0 });
@@ -56,7 +67,7 @@ function LoggerBody({ draft }: { draft: Draft }) {
     }
   }, [now, draft.restEndsAt]);
 
-  const toKgSets = (e: DraftExercise) => e.sets.filter((s) => s.done).map((s) => ({ setType: s.setType, weightKg: s.weight ? u.toKg(Number(s.weight)) : 0, reps: s.reps ? Number(s.reps) : 0 }));
+  const toKgSets = (e: DraftExercise) => e.sets.filter((s) => s.done).map((s) => ({ setType: s.setType, weightKg: s.weight ? u.liftToKg(Number(s.weight)) : 0, reps: s.reps ? Number(s.reps) : 0 }));
   const totals = workoutTotals(draft.exercises.map((e) => ({ type: e.type as ExerciseType, sets: toKgSets(e) })));
   const setsDone = totals.totalSets;
 
@@ -72,7 +83,7 @@ function LoggerBody({ draft }: { draft: Draft }) {
     if (!s.done) {
       // Blank fields take last time's numbers, so a repeat set is a single tap.
       const fill = (cur: string, v: number | null | undefined, conv: (n: number) => number = (n) => n) => (cur !== "" || v == null ? cur : String(Math.round(conv(v) * 10) / 10));
-      patchSet(e.key, s.id, (x) => ({ ...x, done: true, weight: fill(x.weight, p?.weightKg, u.show), reps: fill(x.reps, p?.reps), duration: fill(x.duration, p?.durationS, (n) => n / 60), distance: fill(x.distance, p?.distanceM, u.distShow) }));
+      patchSet(e.key, s.id, (x) => ({ ...x, done: true, weight: fill(x.weight, p?.weightKg, u.liftShow), reps: fill(x.reps, p?.reps), duration: fill(x.duration, p?.durationS, (n) => n / 60), distance: fill(x.distance, p?.distanceM, u.distShow) }));
       startRest(e.restSeconds ?? DEFAULT_REST);
     } else patchSet(e.key, s.id, (x) => ({ ...x, done: false }));
   }
@@ -90,19 +101,25 @@ function LoggerBody({ draft }: { draft: Draft }) {
         </div>
         <div className="flex flex-col items-end gap-2">
           <Button onClick={() => setFinishing(true)} disabled={setsDone === 0 && !draft.exercises.some((e) => e.sets.some((s) => s.done))}>Finish</Button>
-          <button onClick={() => setMenu(true)} className="min-h-9 px-2 text-sm text-muted underline underline-offset-4">Discard</button>
+          <button type="button" onClick={() => setMenu(true)} className="min-h-9 px-2 text-sm text-muted underline underline-offset-4">Discard</button>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2.5">
         <Stat label="Sets" value={setsDone} />
-        <Stat label="Volume" value={fmtVolume(totals.totalVolumeKg, u.w)} unit={u.w} />
+        <Stat label="Volume" value={fmtVolume(totals.totalVolumeKg, u.lift)} unit={u.lift} />
         <Stat label="Exercises" value={draft.exercises.length} tone="lime" />
       </div>
 
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <span className="text-sm text-muted">Log weights in</span>
+        <Segmented<"kg" | "lb"> className="w-36" value={u.lift} onChange={(v) => { if (v !== u.lift && !changeLift.isPending) changeLift.mutate(v); }} options={[{ value: "kg", label: "kg" }, { value: "lb", label: "lb" }]} />
+      </div>
+      <ErrorNote error={changeLift.error} />
+
       <div className="mt-3 space-y-3">
         {draft.exercises.map((e) => (
-          <ExerciseCard key={e.key} e={e} prev={prev.data?.data[e.exerciseId]} unitW={u.w} unitD={u.d}
+          <ExerciseCard key={e.key} e={e} prev={prev.data?.data[e.exerciseId]} unitW={u.lift} unitD={u.d}
             onSet={(id, fn) => patchSet(e.key, id, fn)} onToggle={(s, i) => toggleDone(e, s, i)}
             onAddSet={() => patchExercise(e.key, (x) => { const last = x.sets[x.sets.length - 1]; return { ...x, sets: [...x.sets, newSet(last ? { weight: last.weight, reps: last.reps, duration: last.duration, distance: last.distance } : {})] }; })}
             onRemoveSet={(id) => patchExercise(e.key, (x) => ({ ...x, sets: x.sets.filter((s) => s.id !== id) }))}
@@ -182,16 +199,16 @@ function ExerciseCard({ e, prev, unitW, unitD, onSet, onToggle, onAddSet, onRemo
           const working = e.sets.slice(0, i).filter((x) => x.setType !== "warmup").length + 1;
           return (
             <div key={s.id} className="grid items-center gap-x-1.5" style={{ gridTemplateColumns: cols }}>
-              <button onClick={() => onSet(s.id, (x) => ({ ...x, setType: TYPE_CYCLE[(TYPE_CYCLE.indexOf(x.setType) + 1) % TYPE_CYCLE.length] }))}
+              <button type="button" onClick={() => onSet(s.id, (x) => ({ ...x, setType: TYPE_CYCLE[(TYPE_CYCLE.indexOf(x.setType) + 1) % TYPE_CYCLE.length] }))}
                 aria-label={`Set ${i + 1}, ${s.setType} set. Tap to change type.`} className={cx("display flex h-10 items-center justify-center rounded-lg text-base", s.setType !== "normal" && "bg-lavender text-lavender-fg")}>
                 {TYPE_LABEL[s.setType] || working}
               </button>
-              <span className="display truncate text-sm text-muted">{prevText(e.type as ExerciseType, p, { w: unitW, d: unitD }, u.show, u.distShow)}</span>
-              {f.weight ? num("weight", s, p?.weightKg != null ? String(Math.round(u.show(p.weightKg) * 10) / 10) : "", f.weightLabel ?? "Weight") : null}
+              <span className="display truncate text-sm text-muted">{prevText(e.type as ExerciseType, p, { w: unitW, d: unitD }, u.liftShow, u.distShow)}</span>
+              {f.weight ? num("weight", s, p?.weightKg != null ? String(Math.round(u.liftShow(p.weightKg) * 10) / 10) : "", f.weightLabel ?? "Weight") : null}
               {f.reps ? num("reps", s, p?.reps != null ? String(p.reps) : "", "Reps") : null}
               {f.duration ? num("duration", s, p?.durationS != null ? String(Math.round(p.durationS / 6) / 10) : "", "Minutes") : null}
               {f.distance ? num("distance", s, p?.distanceM != null ? String(Math.round(u.distShow(p.distanceM) * 100) / 100) : "", "Distance") : null}
-              <button onClick={() => onToggle(s, i)} aria-pressed={s.done} aria-label={`Mark set ${i + 1} ${s.done ? "not done" : "done"}`}
+              <button type="button" onClick={() => onToggle(s, i)} aria-pressed={s.done} aria-label={`Mark set ${i + 1} ${s.done ? "not done" : "done"}`}
                 className={cx("flex size-9 items-center justify-center rounded-lg border-2 transition-colors", s.done ? "border-lime bg-lime text-[#14213d]" : "border-border text-transparent")}>
                 <Check size={18} strokeWidth={3} />
               </button>
@@ -200,8 +217,8 @@ function ExerciseCard({ e, prev, unitW, unitD, onSet, onToggle, onAddSet, onRemo
         })}
       </div>
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-        <button onClick={onAddSet} className="flex min-h-9 items-center gap-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-foreground"><span className="flex size-6 items-center justify-center rounded-md bg-lime text-[#14213d]"><Plus size={16} strokeWidth={2.5} /></span>Add set</button>
-        {e.sets.length > 1 ? <button onClick={() => onRemoveSet(e.sets[e.sets.length - 1].id)} className="min-h-9 text-sm text-muted">Remove last set</button> : null}
+        <button type="button" onClick={onAddSet} className="flex min-h-9 items-center gap-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-foreground"><span className="flex size-6 items-center justify-center rounded-md bg-lime text-[#14213d]"><Plus size={16} strokeWidth={2.5} /></span>Add set</button>
+        {e.sets.length > 1 ? <button type="button" onClick={() => onRemoveSet(e.sets[e.sets.length - 1].id)} className="min-h-9 text-sm text-muted">Remove last set</button> : null}
       </div>
     </Card>
   );
@@ -226,7 +243,7 @@ function FinishSheet({ open, onClose, draft }: { open: boolean; onClose: () => v
           exerciseId: e.exerciseId, restSeconds: e.restSeconds ?? undefined,
           sets: e.sets.filter((s) => s.done).map((s) => ({
             setType: s.setType,
-            weightKg: s.weight !== "" ? Math.round(u.toKg(Number(s.weight)) * 100) / 100 : undefined,
+            weightKg: s.weight !== "" ? Math.round(u.liftToKg(Number(s.weight)) * 100) / 100 : undefined,
             reps: s.reps !== "" ? Math.round(Number(s.reps)) : undefined,
             durationS: s.duration !== "" ? Math.round(Number(s.duration) * 60) : undefined,
             distanceM: s.distance !== "" ? Math.round(u.distToM(Number(s.distance))) : undefined,

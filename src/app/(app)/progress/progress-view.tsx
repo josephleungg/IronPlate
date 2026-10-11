@@ -98,7 +98,7 @@ function LiftsTab() {
   const stats = useQuery({ queryKey: ["ex-stats", ex?.id], queryFn: () => api<Stats>(`/exercises/${ex!.id}/stats`), enabled: Boolean(ex) });
   const r = report.data;
   const maxSets = Math.max(1, ...(r?.muscles.map((m) => m.sets) ?? [1]));
-  const series = (stats.data?.series ?? []).filter((s) => s.est1rm != null).map((s) => ({ x: new Date(s.date).getTime(), y: Math.round(u.show(s.est1rm!) * 10) / 10 }));
+  const series = (stats.data?.series ?? []).filter((s) => s.est1rm != null).map((s) => ({ x: new Date(s.date).getTime(), y: Math.round(u.liftShow(s.est1rm!) * 10) / 10 }));
   const best = stats.data?.records.est_1rm;
 
   return (
@@ -108,11 +108,11 @@ function LiftsTab() {
         <>
           <div className="grid grid-cols-3 gap-2.5">
             <Stat label="Workouts" value={r.totals.workouts} />
-            <Stat label="Volume" value={fmtVolume(r.totals.volumeKg, u.w)} unit={u.w} />
+            <Stat label="Volume" value={fmtVolume(r.totals.volumeKg, u.lift)} unit={u.lift} />
             <Stat label="PRs" value={r.totals.prs} tone="lime" />
           </div>
           {r.weeks.length ? (
-            <Card><h2 className="mb-2 text-xl">Weekly volume</h2><BarChart label="Volume per week" data={r.weeks.map((w, i) => ({ label: new Date(`${w.week}T12:00:00`).toLocaleDateString("en", { month: "short", day: "numeric" }), value: Math.round(u.show(w.volumeKg)), highlight: i === r.weeks.length - 1 }))} /></Card>
+            <Card><h2 className="mb-2 text-xl">Weekly volume</h2><BarChart label="Volume per week" data={r.weeks.map((w, i) => ({ label: new Date(`${w.week}T12:00:00`).toLocaleDateString("en", { month: "short", day: "numeric" }), value: Math.round(u.liftShow(w.volumeKg)), highlight: i === r.weeks.length - 1 }))} /></Card>
           ) : <Empty title="No training in this period" body="Log a workout and your volume shows up here." />}
           {r.muscles.length ? (
             <Card>
@@ -128,8 +128,8 @@ function LiftsTab() {
         <div className="flex items-center justify-between gap-2"><h2 className="text-xl">Lift progress</h2><Button size="sm" variant="secondary" onClick={() => setPicker(true)}>{ex ? "Change" : "Pick a lift"}</Button></div>
         {!ex ? <p className="text-sm text-muted">Choose an exercise to see your estimated one-rep max over time.</p> : stats.isLoading ? <Skeleton className="h-32" /> : (
           <>
-            <div className="flex items-end justify-between"><div><div className="text-sm text-muted">{ex.name}</div><div className="display text-4xl leading-tight">{best ? n1(u.show(best)) : "–"}<span className="ml-1 text-sm font-medium text-muted">{u.w} est. 1RM</span></div></div>{best ? <Trophy className="text-muted" /> : null}</div>
-            {series.length ? <div className="text-[#14213d] dark:text-lime"><LineChart points={series} color="currentColor" label={`${ex.name} estimated one rep max`} unit={u.w} /></div> : <p className="text-sm text-muted">Not enough weighted sets yet. Estimates need 12 reps or fewer.</p>}
+            <div className="flex items-end justify-between"><div><div className="text-sm text-muted">{ex.name}</div><div className="display text-4xl leading-tight">{best ? n1(u.liftShow(best)) : "–"}<span className="ml-1 text-sm font-medium text-muted">{u.lift} est. 1RM</span></div></div>{best ? <Trophy className="text-muted" /> : null}</div>
+            {series.length ? <div className="text-[#14213d] dark:text-lime"><LineChart points={series} color="currentColor" label={`${ex.name} estimated one rep max`} unit={u.lift} /></div> : <p className="text-sm text-muted">Not enough weighted sets yet. Estimates need 12 reps or fewer.</p>}
           </>
         )}
       </Card>

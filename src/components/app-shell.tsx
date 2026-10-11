@@ -6,7 +6,7 @@ import { BookOpenText, ChartLine, Dumbbell, Users } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/hooks";
-import { cx } from "./ui";
+import { cx, Skeleton } from "./ui";
 
 const TABS = [
   { href: "/diary", label: "Diary", icon: BookOpenText },
@@ -30,7 +30,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto min-h-dvh w-full max-w-lg">
-      <div className={cx("px-4 pt-6", immersive ? "pb-6" : "pb-28")}>{children}</div>
+      {/* Wait for the user's settings before showing pages, so units never flash in the wrong system. */}
+      <div className={cx("px-4 pt-6", immersive ? "pb-6" : "pb-28")}>
+        {me.isLoading ? <div className="space-y-3" aria-busy="true"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-36" /><Skeleton className="h-24" /></div> : children}
+      </div>
       {immersive ? null : (
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card">
           <ul className="mx-auto flex max-w-lg px-1.5 pb-[max(10px,env(safe-area-inset-bottom))] pt-2">

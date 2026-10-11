@@ -25,6 +25,8 @@ export const userSettings = sqliteTable("user_settings", {
   }).notNull().default("light"),
   weightUnit: text("weight_unit", { enum: ["kg", "lb"] }).notNull().default("kg"),
   distanceUnit: text("distance_unit", { enum: ["km", "mi"] }).notNull().default("km"),
+  // Unit for lifting weights only. null = follow weightUnit. Body weight always follows weightUnit.
+  liftUnit: text("lift_unit", { enum: ["kg", "lb"] }),
   timezone: text("timezone").notNull().default("UTC"),
   weekStart: integer("week_start").notNull().default(1),
   diaryVisibility: text("diary_visibility", { enum: ["private", "followers", "public"] }).notNull().default("private"),
