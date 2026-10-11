@@ -1,6 +1,6 @@
 # Requirements & Features
 
-LockedIn combines a **MyFitnessPal-style nutrition tracker** with a **Hevy-style workout logger and social network**, on one account and one feed. This document lists every feature, the non-functional requirements, and the tools and services the app depends on.
+IronPlate combines a **MyFitnessPal-style nutrition tracker** with a **Hevy-style workout logger and social network**, on one account and one feed. This document lists every feature, the non-functional requirements, and the tools and services the app depends on.
 
 - [Product scope](#product-scope)
 - [User roles](#user-roles)
@@ -17,7 +17,7 @@ LockedIn combines a **MyFitnessPal-style nutrition tracker** with a **Hevy-style
 
 ## Product scope
 
-| From MyFitnessPal | From Hevy | New in LockedIn |
+| From MyFitnessPal | From Hevy | New in IronPlate |
 |---|---|---|
 | Daily food diary by meal | Workout logger with sets, reps, weight, RPE, supersets | One feed for **workouts and meals/progress** |
 | Huge food database, barcode scanner | Routines, folders, program library | Nutrition and training analytics side by side |
@@ -332,7 +332,7 @@ Each item carries a phase (P1–P4).
 
 Everything runs on Cloudflare except the few things in the [next section](#non-cloudflare-dependencies-unavoidable).
 
-| Service | What LockedIn uses it for |
+| Service | What IronPlate uses it for |
 |---|---|
 | **Workers** | Runs the API (`api`), the background jobs (`jobs`), and the Next.js app (`web`, via OpenNext) |
 | **Workers Static Assets** | Serves Next.js static assets. (Cloudflare points new full-stack apps at Workers rather than Pages, and OpenNext targets Workers.) |

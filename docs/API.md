@@ -2,7 +2,7 @@
 
 One versioned REST API serves the **web app and the future React Native app**. It runs as a Hono Worker on Cloudflare, and its OpenAPI 3.1 spec is generated from the same Zod schemas the clients import.
 
-- **Base URL:** `https://lockedin.app/api`. A Workers route sends `/api/*` to the `api` Worker, so the web app calls it same-origin. Every path below is relative to this base (`/v1/me` → `https://lockedin.app/api/v1/me`).
+- **Base URL:** `https://ironplate.app/api`. A Workers route sends `/api/*` to the `api` Worker, so the web app calls it same-origin. Every path below is relative to this base (`/v1/me` → `https://ironplate.app/api/v1/me`).
 - **Auth routes:** `/auth/*`, handled by Better Auth
 - **Spec:** `GET /v1/openapi.json`
 
@@ -377,7 +377,7 @@ Mobile purchases go through the App Store or Play Store via RevenueCat, then rea
 
 ## Admin
 
-Mounted at `/admin/v1/*` (that is, `https://lockedin.app/api/admin/v1/*`). Protected by **Cloudflare Access** (Zero Trust) in front of the route, *plus* a role check in the Worker.
+Mounted at `/admin/v1/*` (that is, `https://ironplate.app/api/admin/v1/*`). Protected by **Cloudflare Access** (Zero Trust) in front of the route, *plus* a role check in the Worker.
 
 | Method | Path | Description |
 |---|---|---|

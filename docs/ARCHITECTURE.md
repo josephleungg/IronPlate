@@ -1,6 +1,6 @@
 # Architecture
 
-LockedIn runs on **one platform, Cloudflare**. Next.js handles the web UI. A standalone, versioned REST API serves both the web app and the future React Native app.
+IronPlate runs on **one platform, Cloudflare**. Next.js handles the web UI. A standalone, versioned REST API serves both the web app and the future React Native app.
 
 - [Guiding principles](#guiding-principles)
 - [System overview](#system-overview)
@@ -22,6 +22,18 @@ LockedIn runs on **one platform, Cloudflare**. Next.js handles the web UI. A sta
 - [Environments & CI/CD](#environments--cicd)
 - [Mobile app (React Native)](#mobile-app-react-native)
 - [Platform limits & risks](#platform-limits--risks)
+
+> **As built (v0).** This document describes the full target design on a Cloudflare-only stack. The first build is deliberately smaller, for a friends-sized app on Vercel. What differs:
+>
+> | Target design | As built |
+> |---|---|
+> | Next.js on Workers via OpenNext, separate Hono API and jobs Workers | One Next.js app on Vercel. The API is Next route handlers under `/api/v1`. |
+> | Workers use D1 bindings directly | Vercel reaches D1 through one small gateway Worker (`workers/gateway`) with a bearer token. See [SETUP.md](SETUP.md). |
+> | Two D1 databases (`core`, `catalog`) | One database. |
+> | Durable Objects, Queues, Workflows, Vectorize, KV | Not used yet. Realtime is polling, side effects run inline, food search is `LIKE` with ranking, feed is a query (no fan-out table). |
+> | Presigned R2 uploads, Workers AI | Same, with Workers AI called through the gateway. |
+>
+> The service layer (`src/server/services`) holds all the logic, so any of these can be added later without changing the API.
 
 Related: [Requirements](REQUIREMENTS.md) · [Database](DATABASE.md) · [API](API.md)
 
@@ -99,9 +111,9 @@ flowchart TB
 
 | Worker | Built from | Handles | Bindings |
 |---|---|---|---|
-| `lockedin-web` | `apps/web` (Next.js → OpenNext) | All UI routes, SSR/RSC, static assets, OG images | `API` (service binding), `NEXT_INC_CACHE_R2_BUCKET`, `ASSETS` |
-| `lockedin-api` | `apps/api` (Hono) | `/api/*`: REST, auth, WebSocket upgrades, webhooks. Hosts the Durable Object classes. | `DB` (core), `CATALOG` (catalog), `KV`, `MEDIA` (R2), `VECTORIZE_*`, `AI`, `ANALYTICS`, `RATE_LIMITER`, `USER_HUB`, `LIVE_WORKOUT`, `CHALLENGE_ROOM`, queue producers, workflow bindings |
-| `lockedin-jobs` | `apps/jobs` | Queue consumers, Cron Triggers, Workflow classes | `DB`, `CATALOG`, `KV`, `MEDIA`, `VECTORIZE_*`, `AI`, `EMAIL` (`send_email`), DO namespaces (via `script_name` → api) |
+| `ironplate-web` | `apps/web` (Next.js → OpenNext) | All UI routes, SSR/RSC, static assets, OG images | `API` (service binding), `NEXT_INC_CACHE_R2_BUCKET`, `ASSETS` |
+| `ironplate-api` | `apps/api` (Hono) | `/api/*`: REST, auth, WebSocket upgrades, webhooks. Hosts the Durable Object classes. | `DB` (core), `CATALOG` (catalog), `KV`, `MEDIA` (R2), `VECTORIZE_*`, `AI`, `ANALYTICS`, `RATE_LIMITER`, `USER_HUB`, `LIVE_WORKOUT`, `CHALLENGE_ROOM`, queue producers, workflow bindings |
+| `ironplate-jobs` | `apps/jobs` | Queue consumers, Cron Triggers, Workflow classes | `DB`, `CATALOG`, `KV`, `MEDIA`, `VECTORIZE_*`, `AI`, `EMAIL` (`send_email`), DO namespaces (via `script_name` → api) |
 
 Keeping `jobs` separate from `api` means heavy background work (imports, exports, fan-out) never shares CPU limits or deploys with the request path.
 
@@ -110,7 +122,7 @@ Keeping `jobs` separate from `api` means heavy background work (imports, exports
 ## Monorepo layout
 
 ```
-lockedin/
+ironplate/
 ├── apps/
 │   ├── web/                    # Next.js 16 App Router → OpenNext → Workers
 │   │   ├── app/
@@ -153,13 +165,13 @@ lockedin/
 
 | Host / path | Target |
 |---|---|
-| `lockedin.app/*` | `lockedin-web` Worker (custom domain) |
-| `lockedin.app/api/*` | `lockedin-api` Worker (Workers route, more specific so it wins) |
-| `lockedin.app/admin*` and `lockedin.app/api/admin/*` | Same Workers, but a **Cloudflare Access** application sits in front |
-| `media.lockedin.app/*` | Public R2 bucket custom domain (public avatars and post media), with Image Transformations |
-| `www.lockedin.app` | Redirect rule → apex |
+| `ironplate.app/*` | `ironplate-web` Worker (custom domain) |
+| `ironplate.app/api/*` | `ironplate-api` Worker (Workers route, more specific so it wins) |
+| `ironplate.app/admin*` and `ironplate.app/api/admin/*` | Same Workers, but a **Cloudflare Access** application sits in front |
+| `media.ironplate.app/*` | Public R2 bucket custom domain (public avatars and post media), with Image Transformations |
+| `www.ironplate.app` | Redirect rule → apex |
 
-Same-origin `/api` means first-party cookies, no CORS for the web, and one TLS connection. The mobile app calls the same `https://lockedin.app/api/v1`.
+Same-origin `/api` means first-party cookies, no CORS for the web, and one TLS connection. The mobile app calls the same `https://ironplate.app/api/v1`.
 
 ---
 
@@ -203,7 +215,7 @@ See [DATABASE.md](DATABASE.md) for the full UML diagrams.
 | **D1 `catalog`** | Foods, servings, barcodes, submissions, FTS5 index. Read-heavy, bulk-imported. |
 | **Durable Object storage** | Live workout state, realtime connection state, live challenge rankings |
 | **KV** | Barcode → food cache, public profile and explore caches, feature flags / remote config |
-| **R2** | `lockedin-media` (private + public prefixes), `lockedin-exports`, `lockedin-imports`, OpenNext cache |
+| **R2** | `ironplate-media` (private + public prefixes), `ironplate-exports`, `ironplate-imports`, OpenNext cache |
 | **Vectorize** | `foods`, `exercises`, `routines` embedding indexes |
 | **Analytics Engine** | `events` (product analytics), `api_metrics` |
 
@@ -391,7 +403,7 @@ All calls go **Worker → AI Gateway → Workers AI**. That gives caching for re
 
 ## Media pipeline
 
-- **Storage:** R2 bucket `lockedin-media`. Public media (avatars, public post photos) lives under `public/`, served from `media.lockedin.app`. Private media (progress photos, private workouts) lives under `private/` and is only reachable through the API, which checks permissions and returns short-lived signed URLs.
+- **Storage:** R2 bucket `ironplate-media`. Public media (avatars, public post photos) lives under `public/`, served from `media.ironplate.app`. Private media (progress photos, private workouts) lives under `private/` and is only reachable through the API, which checks permissions and returns short-lived signed URLs.
 - **Delivery:** Cloudflare **Images** transformations generate sizes (`w=96` avatar, `w=640` feed, `w=1600` full) and AVIF/WebP. Metadata is **stripped** on output, so EXIF/GPS never leaves the server.
 - **Video (P2):** Cloudflare **Stream** direct creator uploads, max 60 s, played with the Stream player / HLS.
 - **Limits:** images ≤ 15 MB, ≤ 10 per post. Presigned URLs bind exact `Content-Type` and `Content-Length`.
@@ -440,8 +452,8 @@ Rule: never cache anything user-private in KV or the CDN.
 |---|---|---|---|
 | Local | `next dev` + `initOpenNextCloudflareForDev` | `wrangler dev` (Miniflare/workerd) | Local D1/KV/R2 + seed scripts |
 | Preview (per PR) | Workers Builds preview URL | Preview versions | Shared `staging` resources |
-| Staging | `staging.lockedin.app` | `wrangler deploy --env staging` | Separate D1/KV/R2/Vectorize |
-| Production | `lockedin.app` | `wrangler versions upload` → **gradual deployment** (10% → 100%) | Production resources, D1 Time Travel for point-in-time recovery |
+| Staging | `staging.ironplate.app` | `wrangler deploy --env staging` | Separate D1/KV/R2/Vectorize |
+| Production | `ironplate.app` | `wrangler versions upload` → **gradual deployment** (10% → 100%) | Production resources, D1 Time Travel for point-in-time recovery |
 
 **Pipeline:** Biome → typecheck → Vitest (in workerd via `vitest-pool-workers`) → build → apply D1 migrations (staging, then prod) → upload Worker versions → Playwright E2E against staging → promote.
 
@@ -461,7 +473,7 @@ The backend is mobile-ready from P1. The Expo app (P3) plugs into it:
 | Native features | Barcode via `expo-camera`. HealthKit / Health Connect. Push via `expo-notifications` (tokens registered at `/v1/me/devices`; the server sends to APNs/FCM directly). iOS Live Activities for the rest timer. Widgets. |
 | Payments | RevenueCat → App Store / Play Billing. A webhook syncs the entitlement into `subscriptions`, so Premium unlocks everywhere. |
 | Releases | EAS Build + EAS Update (OTA for JS-only fixes). `/v1/config` enforces a minimum app version. |
-| Deep links | Universal links / App Links for `lockedin.app/u/*`, `/w/*`, `/r/*` (association files served by the web Worker) |
+| Deep links | Universal links / App Links for `ironplate.app/u/*`, `/w/*`, `/r/*` (association files served by the web Worker) |
 
 **API rules that protect mobile:** additive-only changes within `/v1`, no removed fields, unknown enum values tolerated by clients, and every endpoint usable without cookies-from-browser assumptions.
 

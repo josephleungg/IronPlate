@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/*
+ * IronPlate brand tokens. Light follows the brand package exactly; dark is derived from it
+ * (navy surfaces, lime as the primary button so it stays visible on navy).
+ */
+:root {
+  --navy: #14213d;
+  --lime: #d6f85a;
+  --warm-white: #f7f8f2;
+  --slate: #526079;
+  --lavender: #e7e2fa;
+
+  --background: var(--warm-white);
+  --foreground: var(--navy);
+  --card: #ffffff;
+  --border: #e3e6da;
+  --muted: var(--slate);
+  --track: #e8eadf;
+  --secondary-card: var(--lavender);
+  --secondary-card-fg: #3b3470;
+  --primary: var(--navy);
+  --primary-fg: var(--warm-white);
+  --hero: var(--navy);
+  --hero-fg: var(--warm-white);
+  --hero-muted: #b4bed2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1222;
+    --foreground: var(--warm-white);
+    --card: var(--navy);
+    --border: #243659;
+    --muted: #a3afc6;
+    --track: #243659;
+    --secondary-card: #2b2750;
+    --secondary-card-fg: #d9d2f7;
+    --primary: var(--lime);
+    --primary-fg: var(--navy);
+    --hero: #1b2c50;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-track: var(--track);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-lime: var(--lime);
+  --color-lavender: var(--secondary-card);
+  --color-lavender-fg: var(--secondary-card-fg);
+  --color-hero: var(--hero);
+  --color-hero-fg: var(--hero-fg);
+  --color-hero-muted: var(--hero-muted);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 12px;
+  --radius-button: 10px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+/* Headings, stats and numbers use Space Grotesk, whose digits are fixed-width (no jitter in timers). */
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.display { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -1,6 +1,8 @@
 # Database Design
 
-LockedIn stores relational data in **Cloudflare D1** (serverless SQLite), accessed through **Drizzle ORM**. This document holds the full schema as UML entity-relationship diagrams, plus conventions, indexes, and scaling notes.
+IronPlate stores relational data in **Cloudflare D1** (serverless SQLite), accessed through **Drizzle ORM**. This document holds the full schema as UML entity-relationship diagrams, plus conventions, indexes, and scaling notes.
+
+> **As built (v0).** The schema in `src/db/schema/` follows this design with these differences: one database instead of `core` + `catalog`; Better Auth's tables are named `user`, `session`, `account`, `verification` (singular); there is no `feed_entries` table (the feed is a query); `personal_records` has an `is_baseline` flag; and recipes, saved meals, meal plans, fasting, achievements, and challenges are not created yet. Statement batches go through `db.batch()` because D1 has no interactive transactions.
 
 - [Conventions](#conventions)
 - [Database split](#database-split)
